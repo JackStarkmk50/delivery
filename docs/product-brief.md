@@ -56,7 +56,7 @@ Potential tools include spreadsheet-based research logs, paper maps and route sk
 
 ## Current product hypothesis
 
-Small local businesses need a shared delivery queue that combines an order, a useful local address, a driver, a time window, and a clear exception state. The first wedge is dispatcher-led, same-city delivery. Multi-city carrier aggregation, consumer marketplace, automated pricing, payroll, route optimization, and a native driver app remain later decisions until field evidence supports them.
+Small local businesses need a shared delivery queue that combines an order, a useful local address, a driver, a time window, and a clear exception state. The first wedge is dispatcher-led, same-city delivery. A partner app and private recipient tracking link now support a local pilot. Multi-city carrier aggregation, a consumer marketplace, automated pricing, payroll, and route optimization remain later decisions until field evidence supports them.
 
 ## How the service would be provided
 
@@ -72,4 +72,4 @@ Start with assisted onboarding for the first few businesses. Configure their ser
 
 Keep the price easy to predict. Test a base monthly fee with a reasonable included workload and optional driver seats. Avoid a per-success fee that makes monthly costs harder to forecast. Do not set a price until a local cost model includes hosting, map requests, geocoding, messages, support, payment processing, and failed-delivery handling. Compare that full monthly cost with what each pilot business pays today.
 
-The current web demo now includes a product overview plus sample dispatcher sections for overview, deliveries, drivers, service areas, customers, reports, and workspace settings. It supports local browser edits to sample orders, assignments, statuses, driver availability, and locality lists. This is still a front-end demo: accounts, tenant isolation, server persistence, driver updates, recipient links, maps, billing, and messaging are future product work, not present capabilities.
+The browser demo includes sample dispatcher sections for overview, deliveries, drivers, service areas, customers, reports, and workspace settings. It supports local browser edits to fictional orders and driver availability. The separate PostgreSQL-backed pilot workspace has isolated business accounts, team roles, driver assignments and status updates, and private recipient links with address correction. Live maps, automated billing, notifications, and production operations remain future work.

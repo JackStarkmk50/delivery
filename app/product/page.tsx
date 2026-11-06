@@ -32,16 +32,16 @@ const featureGroups = [
   {
     label: "Customer communication",
     title: "Keep delivery updates useful and accountable",
-    description: "A recipient update should explain what happens next and give a simple way to clarify a location. Messaging channels and consent rules must be selected before launch.",
-    points: ["Recipient tracking link", "Delivery notifications and message history", "Contact preferences and consent controls"],
-    state: "Planned",
+    description: "A private link now shows delivery status and lets the recipient send an address correction. Automated messages and consent controls still need pilot decisions.",
+    points: ["Private tracking link", "Address correction before pickup", "Notifications and preferences are planned"],
+    state: "Local pilot",
   },
   {
     label: "Driver tools",
     title: "A phone-first flow for the last mile",
-    description: "The driver experience is a separate mobile app milestone. It needs clear stop details, weak-network handling, status updates, and time-bounded location sharing.",
-    points: ["Assigned stops and address details", "Call the recipient and open a navigation app", "Record delivery proof or an exception"],
-    state: "Planned",
+    description: "The partner app shows assigned stops and records status or a failed attempt. Offline updates, proof and location sharing are still planned.",
+    points: ["Assigned stops and address details", "Call the recipient and open Maps", "Record pickup, delivery and failed attempts"],
+    state: "Local pilot",
   },
   {
     label: "Owner controls",
@@ -71,13 +71,13 @@ const comparison = [
   { type: "Consumer marketplaces · Zomato / Swiggy", suited: "Businesses seeking customer discovery, ordering, and marketplace delivery", limitation: "Marketplace listing, order rules, and customer relationship are part of that platform's model.", miledesk: "MileDesk is a business workspace for orders the merchant already receives and its own driver team." },
   { type: "Quick commerce · Blinkit / Zepto", suited: "Retailers and consumers using rapid, inventory-led local fulfillment", limitation: "These services are built around their catalog, fulfillment operation, and serviceability model.", miledesk: "MileDesk doesn't sell inventory or promise a fixed ultra-fast delivery time; it coordinates local business deliveries." },
   { type: "Delivery suites · Tookan / Onfleet", suited: "Operations needing managed dispatch, routing, tracking, and wider integrations", limitation: "The implementation and feature set may exceed what a small local operator needs; actual fit and price depend on the vendor plan.", miledesk: "Start with dispatcher-led local delivery and add automation only when pilot evidence supports it." },
-  { type: "MileDesk", suited: "Small businesses serving defined neighborhoods", limitation: "The product is early; it does not yet have production accounts, live maps, mobile driver tools, or integrations.", miledesk: "Locality and landmark clarity, dispatcher control, and transparent operating scope are the starting point." },
+  { type: "MileDesk", suited: "Small businesses serving defined neighborhoods", limitation: "The product is a local pilot; live maps, offline mobile work, automated billing, and integrations are not ready.", miledesk: "Locality and landmark clarity, dispatcher control, and transparent operating scope are the starting point." },
 ];
 
 const roadmap = [
   ["Now · browser demo", "Create and search sample deliveries, add address context, assign sample drivers, update status, manage locality lists, view a sample report."],
-  ["Now · local pilot", "PostgreSQL-backed business queues, owner and dispatcher sign-ins, one-use team invites, delivery history, manual service records, and password recovery."],
-  ["After field validation", "Driver mobile app, consented location sharing, route and geocoding provider, proof of delivery, and customer notifications."],
+  ["Now · local pilot", "PostgreSQL-backed business queues, team sign-ins, assigned driver stops, private customer links, delivery history, and manual service records."],
+  ["After field validation", "Consented location sharing, route and geocoding provider, delivery proof, offline updates, and customer notifications."],
   ["Commercial readiness", "Subscription billing, usage limits, support process, backups, monitoring, privacy controls, and production deployment."],
 ];
 

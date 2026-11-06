@@ -19,7 +19,9 @@ npm run db:setup
 
 PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The `/live` workspace connects to it. The browser demo at `/` remains separate. Set `ALLOW_REGISTRATION=false` after creating local pilot accounts.
 
-An owner can invite a dispatcher at `/team`. The one-use link expires after 48 hours and must be shared privately. The invite link is sufficient to create the invited account, so do not post it publicly. An owner can remove a dispatcher; removal deletes that account and its sessions. Password recovery sends a 30-minute, one-use link through SMTP and ends existing sessions after reset. Local email is captured by Mailpit at http://localhost:8025. For a hosted pilot, configure a real SMTP sender and domain before enabling recovery.
+An owner can invite a dispatcher or driver at `/team`. The one-use link expires after 48 hours and must be shared privately. The invite link is sufficient to create the invited account, so do not post it publicly. An owner can remove a team member; removal deletes that account and its sessions. Assigned stops return to the queue when a driver is removed. In-progress stops must be reassigned or finished first. Password recovery sends a 30-minute, one-use link through SMTP and ends existing web and mobile sessions after reset. Local email is captured by Mailpit at http://localhost:8025. For a hosted pilot, configure a real SMTP sender and domain before enabling recovery.
+
+Dispatchers assign driver accounts in `/live`. The partner app lists only that driver's stops and accepts ordered status updates or a failed-attempt reason. A dispatcher can create a private customer link from a delivery. It works in a browser at `/track/<token>` or in the customer app, expires after 30 days, and can be rotated. Address corrections return the delivery to Address check. The customer link is a bearer credential and must be shared privately. The mobile app setup and limits are documented in the separate mobile repository.
 
 The platform operator view is at `/admin`. Set a private `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_PASSWORD` in `.env.local`, run `npm run admin:setup`, then sign in at `/live` with those credentials. Only that designated account can open the operator view. Each client gets a subscription record at registration. Service status and payment status are separate; a manual payment record requires an external reference. There is no payment provider or automatic charge collection.
 
@@ -27,15 +29,14 @@ The operator can search businesses, see delivery counts, and record trial, activ
 
 ## Remaining web foundations
 
-1. Driver identity and permissions, recipient access, and mobile sign-in.
-2. Email verification, stronger abuse limits, and production SMTP setup.
-3. Formal status transitions, driver identity, proof of delivery, and failure-reason policy.
-4. Driver invitations, bulk import preview, delivery proof, and recipient tracking links with revocable tokens.
-5. Salem service areas validated with the pilot business, mapping provider configuration, and notification delivery.
-6. Backups, restore verification, monitoring, rate limits, and deployment configuration.
+1. Email verification, stronger abuse limits, and production SMTP setup.
+2. Delivery proof, failure-reason categories, and an offline update queue for weak networks.
+3. Bulk import preview and customer notification delivery.
+4. Salem service areas validated with the pilot business and mapping provider configuration.
+5. Backups, restore verification, monitoring, rate limits, and deployment configuration.
 
 ## Mobile sequence
 
-Connect the existing driver and customer mobile previews after role-aware authentication and API access work. Core driver screens need assigned deliveries, navigation handoff, status updates, failure reasons, and delivery proof. Offline changes need a durable queue and conflict handling.
+The partner app now connects to assigned deliveries, navigation and calling handoff, status updates, and written failure reasons. The customer app accepts a tracking link and address correction. Both require connectivity. Test the flows on real devices and weak networks before a Salem pilot; add an offline queue and delivery proof only with a clear retention policy.
 
-Start customers with a mobile-friendly tracking link. A separate customer app becomes useful only if repeat ordering, account history, or saved destinations justify installation.
+The mobile-friendly tracking page remains the primary customer experience. The customer app is an optional way to keep one link on a device; it does not have ordering or account history.

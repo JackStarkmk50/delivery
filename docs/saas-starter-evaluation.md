@@ -25,23 +25,23 @@ Wasp is the underlying framework, not just a component library. It owns routes a
 
 Keep the MileDesk Next.js project. Open SaaS is a useful feature reference, but its Wasp routes, generated operations, auth, jobs, and deploy commands cannot be installed into this application unchanged. Its MIT-licensed source may be adapted where it fits, with attribution and dependency review; copying its Wasp modules alone would not provide working Next.js features.
 
-The web backend now has PostgreSQL, workspace-scoped delivery records, owner and dispatcher sessions, an operator dashboard, manual client subscription records, and password recovery through SMTP. These are a local pilot foundation. The remaining Open SaaS capabilities need their own Next.js integrations and provider configuration.
+The web backend now has PostgreSQL, workspace-scoped delivery records, owner, dispatcher, and driver sessions, private customer tracking links, an operator dashboard, manual client subscription records, and password recovery through SMTP. These are a local pilot foundation. The remaining Open SaaS capabilities need their own Next.js integrations and provider configuration.
 
 ## Current gap
 
 | Capability | MileDesk today | Next step |
 |---|---|---|
-| Authentication | Email and password with server sessions, owner and dispatcher memberships, one-use invites, password recovery | Verify email, add driver identity and permissions, strengthen abuse controls; evaluate a maintained Next.js compatible auth package before extending the custom flow |
+| Authentication | Email and password with server sessions, owner, dispatcher, and driver memberships, one-use invites, password recovery | Verify email and strengthen abuse controls; evaluate a maintained Next.js compatible auth package before extending the custom flow |
 | Subscriptions | Operator records service and external payment status manually | Choose a payment provider, add hosted checkout and verified webhooks, reconcile events, then generate invoices and entitlement rules |
 | Email | Nodemailer SMTP for password recovery; Mailpit captures local messages | Select a production SMTP or transactional sender for verification, invitations, and delivery notices |
 | Background work | No queue | Add a PostgreSQL-backed queue and a separate worker for email, retries, reminders, and cleanup |
-| File storage | None | Add proof-of-delivery uploads only after driver identity, retention, size limits, and access checks are defined; use S3-compatible storage |
+| File storage | None | Add proof-of-delivery uploads after retention, size limits, and access checks are defined; use S3-compatible storage |
 | Admin analytics | Client counts and delivery totals | Record dated operational events and compute reconciled subscription and delivery measures; do not infer revenue from manual payment labels |
 | Landing page | Product page exists | Keep its claims synchronized with delivered capabilities |
 | Deployment | Local Docker database and Next.js app | Pick a host and managed PostgreSQL, run migrations on deploy, configure secrets, backups, monitoring, and restore checks |
 | Automated verification | Lint, build, and local browser/API checks | Add repeatable integration and end-to-end checks around tenant isolation, subscription webhooks, and delivery permissions |
 
-The order for a Salem pilot is email verification and driver identity; then a worker for messages and cleanup, delivery proof, and recipient updates. Automatic billing follows a pricing decision and a provider account. Analytics and uploads should answer observed operator needs. An AI example from the starter is not a required MileDesk feature.
+The order for a Salem pilot is email verification and real-device testing; then a worker for messages and cleanup, delivery proof, and recipient notifications. Automatic billing follows a pricing decision and a provider account. Analytics and uploads should answer observed operator needs.
 
 One package can cover several needs, but a package does not supply provider accounts or operational policy. Better Auth documents Next.js email verification and organization roles; `pg-boss` provides PostgreSQL-backed jobs. These are options to evaluate against our existing session and database model, not dependencies already in MileDesk.
 

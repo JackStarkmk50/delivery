@@ -1,0 +1,103 @@
+.tracking-shell {
+  max-width: 900px;
+  margin: auto;
+  min-height: 100vh;
+  padding: 20px 24px 80px;
+}
+.tracking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  color: var(--muted);
+}
+.tracking-header .brand {
+  margin: 0;
+}
+.tracking-content {
+  max-width: 600px;
+  margin: 36px auto;
+  display: grid;
+  gap: 20px;
+}
+.tracking-heading h1 {
+  font-size: 32px;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.tracking-heading p,
+.tracking-panel p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.tracking-panel {
+  padding: 28px;
+}
+.tracking-panel h2 {
+  font-size: 19px;
+  margin-bottom: 12px;
+}
+.tracking-status {
+  display: block;
+  font-size: 25px;
+  color: var(--forest);
+}
+.tracking-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  list-style: none;
+  padding: 20px 0 0;
+  margin: 20px 0 0;
+  border-top: 1px solid var(--line);
+}
+.tracking-steps li {
+  color: var(--muted);
+  font-size: 12px;
+}
+.tracking-steps li.done {
+  color: var(--forest);
+  font-weight: 700;
+}
+.tracking-panel form {
+  display: grid;
+  gap: 16px;
+}
+.tracking-panel label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.tracking-panel textarea {
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.tracking-panel button {
+  justify-self: start;
+}
+.tracking-notice {
+  color: var(--forest);
+}
+@media (max-width: 600px) {
+  .tracking-shell {
+    padding: 16px;
+  }
+  .tracking-content {
+    margin: 28px auto;
+  }
+  .tracking-panel {
+    padding: 22px;
+  }
+  .tracking-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const id = found.rows[0].account_id;
     await client.query('UPDATE accounts SET password_hash=$2 WHERE id=$1', [id,await passwordHash(parsed.data.password)]);
     await client.query('DELETE FROM sessions WHERE account_id=$1', [id]);
+    await client.query('DELETE FROM mobile_sessions WHERE account_id=$1', [id]);
     await client.query('DELETE FROM password_reset_tokens WHERE account_id=$1', [id]);
     await client.query('COMMIT');
     return Response.json({ ok: true });
