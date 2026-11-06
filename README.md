@@ -17,7 +17,9 @@ npm run dev
 
 Open http://localhost:3000.
 
-The workspace is a local product demo. Sample deliveries, drivers, and areas can be edited; changes are saved in the current browser's local storage. There is no authentication, connected server database, tenant isolation, live location, real routing, messaging, or billing yet. The map illustration does not show real streets or GPS positions. The first pilot is planned for Salem; existing Chennai records are fictional samples.
+The workspace at `/` is a browser demo with fictional Chennai records. Changes stay in browser storage. The separate `/live` workspace uses PostgreSQL for account sign-in, isolated delivery queues, and delivery history. The first pilot is planned for Salem. Live location, routing, messaging, billing, and mobile connection are not implemented.
+
+For local data, start Docker Desktop, set a private `POSTGRES_PASSWORD` and matching `DATABASE_URL` in `.env.local`, then run `docker compose up -d database` and `npm run db:setup`. Set `APP_ORIGIN=http://localhost:3000` and `ALLOW_REGISTRATION=true` for local account creation. Disable registration after creating pilot accounts. See `docs/local-pilot.md` for setup and remaining pilot work.
 
 ## Project notes
 

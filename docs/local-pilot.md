@@ -8,27 +8,28 @@ The Next.js workspace stores demonstration records in the browser. Dispatchers c
 
 ## Local database
 
-Docker Desktop must be running with its Linux engine. Set a local password in the terminal before starting PostgreSQL:
+Docker Desktop must be running with its Linux engine. Copy `.env.example` to `.env.local`, replace both password placeholders with the same long random password, and keep `.env.local` private. Then start PostgreSQL:
 
 ```powershell
-$env:POSTGRES_PASSWORD = Read-Host 'Local database password' -MaskInput
+$env:POSTGRES_PASSWORD = (Get-Content .env.local | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=',2)[1]
 docker compose up -d database
 docker compose ps
+npm run db:setup
 ```
 
-PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The web application is not connected to this database yet.
+PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The `/live` workspace connects to it. The browser demo at `/` remains separate. Set `ALLOW_REGISTRATION=false` after creating local pilot accounts.
 
 ## Remaining web foundations
 
-1. Database migrations for workspaces, memberships, drivers, deliveries, and delivery events.
-2. Authentication and server-side workspace access checks for every read and write.
-3. Transactional delivery changes, validated transitions, failure reasons, and concurrent-edit protection.
+1. Versioned migrations and a membership model for owners, dispatchers, drivers, and recipients.
+2. Email verification, account recovery, stronger abuse limits, and mobile sign-in.
+3. Formal status transitions, driver identity, proof of delivery, and failure-reason policy.
 4. Driver invitations, bulk import preview, delivery proof, and recipient tracking links with revocable tokens.
 5. Salem service areas validated with the pilot business, mapping provider configuration, and notification delivery.
 6. Backups, restore verification, monitoring, rate limits, and deployment configuration.
 
 ## Mobile sequence
 
-Build the driver app after the shared authenticated API works. Use the approved Figma design, as required for mobile. Core screens: sign-in, assigned deliveries, destination details, navigation handoff, status update, failure reason, and delivery proof. Offline changes need a durable queue and conflict handling.
+Connect the existing driver and customer mobile previews after role-aware authentication and API access work. Core driver screens need assigned deliveries, navigation handoff, status updates, failure reasons, and delivery proof. Offline changes need a durable queue and conflict handling.
 
 Start customers with a mobile-friendly tracking link. A separate customer app becomes useful only if repeat ordering, account history, or saved destinations justify installation.
