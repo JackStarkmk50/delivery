@@ -17,9 +17,11 @@ npm run dev
 
 Open http://localhost:3000.
 
-The workspace at `/` is a browser demo with fictional Chennai records. Changes stay in browser storage. The separate `/live` workspace uses PostgreSQL for account sign-in, isolated delivery queues, and delivery history. The first pilot is planned for Salem. Live location, routing, messaging, billing, and mobile connection are not implemented.
+The workspace at `/` is a browser demo with fictional Chennai records. Changes stay in browser storage. The separate `/live` workspace uses PostgreSQL for account sign-in, isolated delivery queues, and delivery history. The restricted `/admin` view lists client businesses and their manually recorded service and payment status. The first pilot is planned for Salem. Live location, routing, messaging, automated billing, and mobile connection are not implemented.
 
 For local data, start Docker Desktop, set a private `POSTGRES_PASSWORD` and matching `DATABASE_URL` in `.env.local`, then run `docker compose up -d database` and `npm run db:setup`. Set `APP_ORIGIN=http://localhost:3000` and `ALLOW_REGISTRATION=true` for local account creation. Disable registration after creating pilot accounts. See `docs/local-pilot.md` for setup and remaining pilot work.
+
+To create the platform operator, set `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_PASSWORD` in `.env.local`, run `npm run admin:setup`, and sign in at `/live`. The operator view is `/admin`. A client cannot edit its subscription record. Payment records marked paid externally require a reference; no charge is collected by this application.
 
 ## Project notes
 

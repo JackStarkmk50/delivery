@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   const user = await account();
   if (!user) return Response.json({ error: 'Sign in required.' }, { status: 401 });
   const parsed = delivery.safeParse(await request.json().catch(() => null));
+  if (!['trial','active'].includes(user.service_status)) return Response.json({ error: 'Workspace access is paused. Contact MileDesk support.' }, { status: 403 });
   if (!parsed.success) return Response.json({ error: 'Check the customer, phone, and destination fields.' }, { status: 400 });
   const item = parsed.data;
   const id = randomUUID();

@@ -19,6 +19,10 @@ npm run db:setup
 
 PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The `/live` workspace connects to it. The browser demo at `/` remains separate. Set `ALLOW_REGISTRATION=false` after creating local pilot accounts.
 
+The platform operator view is at `/admin`. Set a private `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_PASSWORD` in `.env.local`, run `npm run admin:setup`, then sign in at `/live` with those credentials. Only that designated account can open the operator view. Each client gets a subscription record at registration. Service status and payment status are separate; a manual payment record requires an external reference. There is no payment provider or automatic charge collection.
+
+The operator can search businesses, see delivery counts, and record trial, active, paused, or canceled service. Payment state is unknown, unpaid, or paid externally. Plan name, renewal date, and an internal note can be recorded. Paused and canceled clients can view their existing deliveries but cannot create or update them. These are manual records, not an invoice ledger or subscription billing engine.
+
 ## Remaining web foundations
 
 1. Versioned migrations and a membership model for owners, dispatchers, drivers, and recipients.

@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "node scripts/database.mjs"
+    "db:setup": "node scripts/database.mjs",
+    "admin:setup": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "next": "16.4.5",

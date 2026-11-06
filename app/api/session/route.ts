@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     const id = randomUUID();
     const result = await database.query('INSERT INTO accounts(id,email,password_hash,workspace) VALUES($1,$2,$3,$4) ON CONFLICT(email) DO NOTHING RETURNING id', [id, email, await passwordHash(password), workspace]);
     if (!result.rowCount) return Response.json({ error: 'Unable to create account with these details.' }, { status: 409 });
+    await database.query('INSERT INTO subscriptions(account_id) VALUES($1)', [id]);
     await createSession(id);
   } else {
     const result = await database.query('SELECT id,password_hash FROM accounts WHERE email=$1', [email]);

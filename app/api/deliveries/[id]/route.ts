@@ -15,6 +15,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const user = await account();
   if (!user) return Response.json({ error: 'Sign in required.' }, { status: 401 });
   const parsed = change.safeParse(await request.json().catch(() => null));
+  if (!['trial','active'].includes(user.service_status)) return Response.json({ error: 'Workspace access is paused. Contact MileDesk support.' }, { status: 403 });
   if (!parsed.success) return Response.json({ error: 'Check the delivery fields.' }, { status: 400 });
   const { id } = await params;
   const client = await database.connect();
