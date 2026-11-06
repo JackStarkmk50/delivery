@@ -76,7 +76,7 @@ const comparison = [
 
 const roadmap = [
   ["Now · browser demo", "Create and search sample deliveries, add address context, assign sample drivers, update status, manage locality lists, view a sample report."],
-  ["Next · pilot foundation", "Secure sign-in, isolated business workspaces, role permissions, persistent database, import/export, and audit history."],
+  ["Now · local pilot", "PostgreSQL-backed business queues, owner and dispatcher sign-ins, one-use team invites, delivery history, manual service records, and password recovery."],
   ["After field validation", "Driver mobile app, consented location sharing, route and geocoding provider, proof of delivery, and customer notifications."],
   ["Commercial readiness", "Subscription billing, usage limits, support process, backups, monitoring, privacy controls, and production deployment."],
 ];

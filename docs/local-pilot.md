@@ -12,12 +12,14 @@ Docker Desktop must be running with its Linux engine. Copy `.env.example` to `.e
 
 ```powershell
 $env:POSTGRES_PASSWORD = (Get-Content .env.local | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=',2)[1]
-docker compose up -d database
+docker compose up -d database mailpit
 docker compose ps
 npm run db:setup
 ```
 
 PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The `/live` workspace connects to it. The browser demo at `/` remains separate. Set `ALLOW_REGISTRATION=false` after creating local pilot accounts.
+
+An owner can invite a dispatcher at `/team`. The one-use link expires after 48 hours and must be shared privately. The invite link is sufficient to create the invited account, so do not post it publicly. An owner can remove a dispatcher; removal deletes that account and its sessions. Password recovery sends a 30-minute, one-use link through SMTP and ends existing sessions after reset. Local email is captured by Mailpit at http://localhost:8025. For a hosted pilot, configure a real SMTP sender and domain before enabling recovery.
 
 The platform operator view is at `/admin`. Set a private `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_PASSWORD` in `.env.local`, run `npm run admin:setup`, then sign in at `/live` with those credentials. Only that designated account can open the operator view. Each client gets a subscription record at registration. Service status and payment status are separate; a manual payment record requires an external reference. There is no payment provider or automatic charge collection.
 
@@ -25,8 +27,8 @@ The operator can search businesses, see delivery counts, and record trial, activ
 
 ## Remaining web foundations
 
-1. Versioned migrations and a membership model for owners, dispatchers, drivers, and recipients.
-2. Email verification, account recovery, stronger abuse limits, and mobile sign-in.
+1. Driver identity and permissions, recipient access, and mobile sign-in.
+2. Email verification, stronger abuse limits, and production SMTP setup.
 3. Formal status transitions, driver identity, proof of delivery, and failure-reason policy.
 4. Driver invitations, bulk import preview, delivery proof, and recipient tracking links with revocable tokens.
 5. Salem service areas validated with the pilot business, mapping provider configuration, and notification delivery.

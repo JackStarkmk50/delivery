@@ -10,7 +10,7 @@ export async function GET() {
     count(d.id)::integer AS delivery_count
     FROM accounts a LEFT JOIN subscriptions s ON s.account_id=a.id
     LEFT JOIN deliveries d ON d.account_id=a.id
-    WHERE a.is_platform_admin=false
+    WHERE a.is_platform_admin=false AND EXISTS(SELECT 1 FROM workspace_memberships m WHERE m.account_id=a.id AND m.role='owner')
     GROUP BY a.id,s.account_id ORDER BY a.created_at DESC`, []);
   const clients = result.rows;
   return Response.json({ clients, summary: { total: clients.length, active: clients.filter(client => client.service_status === 'active').length,

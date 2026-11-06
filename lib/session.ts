@@ -18,8 +18,8 @@ export async function verifyPassword(password: string, stored: string) {
 export async function account() {
   const token = (await cookies()).get('miledesk-session')?.value;
   if (!token) return null;
-  const result = await database.query("SELECT a.id,a.email,a.workspace,a.is_platform_admin,coalesce(sub.service_status,'trial') AS service_status FROM accounts a JOIN sessions s ON s.account_id=a.id LEFT JOIN subscriptions sub ON sub.account_id=a.id WHERE s.token_hash=$1 AND s.expires_at>now()", [hash(token)]);
-  return result.rows[0] as { id: string; email: string; workspace: string; is_platform_admin: boolean; service_status: string } | undefined;
+  const result = await database.query("SELECT a.id,a.email,coalesce(owner.workspace,a.workspace) AS workspace,a.is_platform_admin,m.workspace_id,m.role,coalesce(sub.service_status,'trial') AS service_status FROM accounts a JOIN sessions s ON s.account_id=a.id LEFT JOIN workspace_memberships m ON m.account_id=a.id LEFT JOIN accounts owner ON owner.id=m.workspace_id LEFT JOIN subscriptions sub ON sub.account_id=m.workspace_id WHERE s.token_hash=$1 AND s.expires_at>now()", [hash(token)]);
+  return result.rows[0] as { id: string; email: string; workspace: string; workspace_id: string | null; role: 'owner' | 'dispatcher' | null; is_platform_admin: boolean; service_status: string } | undefined;
 }
 export async function createSession(accountId: string) {
   const token = randomBytes(32).toString('hex');
