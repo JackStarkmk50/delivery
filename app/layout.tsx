@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./interface.css";
 import "./workspace.css";
+import "./design-system.css";
 
 export const metadata: Metadata = {
   title: "MileDesk — Local delivery, under control",
