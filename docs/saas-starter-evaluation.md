@@ -1,6 +1,6 @@
 # Open SaaS starter review
 
-Reviewed 6 November 2026 against the MileDesk requirement to keep Next.js App Router, TypeScript, and Tailwind CSS.
+Reviewed 6 November 2026 against the MileDesk requirement to keep Next.js App Router, TypeScript, and Tailwind CSS. Current implementation status was checked against the project source.
 
 ## What it is
 
@@ -23,9 +23,27 @@ Wasp is the underlying framework, not just a component library. It owns routes a
 
 ## Recommendation
 
-Do not replace the MileDesk Next.js project with Open SaaS. That would abandon the requested framework and require porting the current UI into Wasp's structure. Keep the template as a reference for the missing SaaS foundation: tenant-aware authentication, roles, database migrations, email, background jobs, subscription lifecycle, file storage, admin operations, and deployment procedures.
+Keep the MileDesk Next.js project. Open SaaS is a useful feature reference, but its Wasp routes, generated operations, auth, jobs, and deploy commands cannot be installed into this application unchanged. Its MIT-licensed source may be adapted where it fits, with attribution and dependency review; copying its Wasp modules alone would not provide working Next.js features.
 
-When MileDesk begins backend work, choose components that fit the Next.js architecture and implement the same requirements. The decision should be revisited only if the team explicitly decides that adopting Wasp is worth changing the framework requirement.
+The web backend now has PostgreSQL, account-scoped delivery records, server sessions, an operator dashboard, and manual client subscription records. These are a local pilot foundation. The remaining Open SaaS capabilities need their own Next.js integrations and provider configuration.
+
+## Current gap
+
+| Capability | MileDesk today | Next step |
+|---|---|---|
+| Authentication | Email and password with server sessions | Verify email, recover accounts, add team memberships and role checks; evaluate a maintained Next.js compatible auth package before extending the custom flow |
+| Subscriptions | Operator records service and external payment status manually | Choose a payment provider, add hosted checkout and verified webhooks, reconcile events, then generate invoices and entitlement rules |
+| Email | No sender | Use a local SMTP capture service during development; select a production SMTP or transactional sender for verification, invitations, and delivery notices |
+| Background work | No queue | Add a PostgreSQL-backed queue and a separate worker for email, retries, reminders, and cleanup |
+| File storage | None | Add proof-of-delivery uploads only after driver identity, retention, size limits, and access checks are defined; use S3-compatible storage |
+| Admin analytics | Client counts and delivery totals | Record dated operational events and compute reconciled subscription and delivery measures; do not infer revenue from manual payment labels |
+| Landing page | Product page exists | Keep its claims synchronized with delivered capabilities |
+| Deployment | Local Docker database and Next.js app | Pick a host and managed PostgreSQL, run migrations on deploy, configure secrets, backups, monitoring, and restore checks |
+| Automated verification | Lint, build, and local browser/API checks | Add repeatable integration and end-to-end checks around tenant isolation, subscription webhooks, and delivery permissions |
+
+The order for a Salem pilot is team roles and account recovery; dependable email; a worker for messages and cleanup; then delivery proof and recipient updates. Automatic billing follows a pricing decision and a provider account. Analytics and uploads should answer observed operator needs. An AI example from the starter is not a required MileDesk feature.
+
+One package can cover several needs, but a package does not supply provider accounts or operational policy. Better Auth documents Next.js email verification and organization roles; `pg-boss` provides PostgreSQL-backed jobs. These are options to evaluate against our existing session and database model, not dependencies already in MileDesk.
 
 ## Sources
 
@@ -34,3 +52,7 @@ When MileDesk begins backend work, choose components that fit the Next.js archit
 - [Open SaaS getting started guide](https://docs.opensaas.sh/start/getting-started/)
 - [Open SaaS guided tour](https://docs.opensaas.sh/start/guided-tour/)
 - [Wasp framework repository](https://github.com/wasp-lang/wasp)
+- [Open SaaS payment integrations](https://docs.opensaas.sh/guides/payment-integrations/)
+- [Open SaaS admin dashboard](https://docs.opensaas.sh/general/admin-dashboard/)
+- [Better Auth Next.js example](https://better-auth.com/docs/examples/next-js)
+- [pg-boss repository](https://github.com/timgit/pg-boss)
