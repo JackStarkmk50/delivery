@@ -19,7 +19,7 @@ npm run db:setup
 
 PostgreSQL listens only on localhost:5432. Database and user are both `miledesk`. Its named volume preserves data across container restarts. The `/live` workspace connects to it. The browser demo at `/` remains separate. Set `ALLOW_REGISTRATION=false` after creating local pilot accounts.
 
-An owner can invite a dispatcher or driver at `/team`. The one-use link expires after 48 hours and must be shared privately. The invite link is sufficient to create the invited account, so do not post it publicly. An owner can remove a team member; removal deletes that account and its sessions. Assigned stops return to the queue when a driver is removed. In-progress stops must be reassigned or finished first. Password recovery sends a 30-minute, one-use link through SMTP and ends existing web and mobile sessions after reset. Local email is captured by Mailpit at http://localhost:8025. For a hosted pilot, configure a real SMTP sender and domain before enabling recovery.
+An owner can invite a dispatcher or driver at `/team`. The one-use link expires after 48 hours and must be shared privately. The invite link creates the invited account, which then needs a one-use email verification link before sign-in. New owner accounts also need verification. Existing accounts created before migration 007 remain sign-in capable. An owner can remove a team member; removal deletes that account and its sessions. Assigned stops return to the queue when a driver is removed. In-progress stops must be reassigned or finished first. Password recovery sends a 30-minute, one-use link through SMTP and ends existing web and mobile sessions after reset. Local email is captured by Mailpit at http://localhost:8025. For a hosted pilot, configure a real SMTP sender and domain before enabling registration and recovery.
 
 Dispatchers assign driver accounts in `/live`. The partner app lists only that driver's stops and accepts ordered status updates or a failed-attempt reason. A dispatcher can create a private customer link from a delivery. It works in a browser at `/track/<token>` or in the customer app, expires after 30 days, and can be rotated. Address corrections return the delivery to Address check. The customer link is a bearer credential and must be shared privately. The mobile app setup and limits are documented in the separate mobile repository.
 
@@ -29,14 +29,14 @@ The operator can search businesses, see delivery counts, and record trial, activ
 
 ## Remaining web foundations
 
-1. Email verification, stronger abuse limits, and production SMTP setup.
-2. Delivery proof, failure-reason categories, and an offline update queue for weak networks.
+1. Stronger abuse limits and production SMTP setup.
+2. Delivery proof and failure-reason categories.
 3. Bulk import preview and customer notification delivery.
 4. Salem service areas validated with the pilot business and mapping provider configuration.
 5. Backups, restore verification, monitoring, rate limits, and deployment configuration.
 
 ## Mobile sequence
 
-The partner app now connects to assigned deliveries, navigation and calling handoff, status updates, and written failure reasons. The customer app accepts a tracking link and address correction. Both require connectivity. Test the flows on real devices and weak networks before a Salem pilot; add an offline queue and delivery proof only with a clear retention policy.
+The partner app connects to assigned deliveries, navigation and calling handoff, status updates, and written failure reasons. It holds an interrupted status change locally for later retry, but needs a connection to load stops and confirm the server accepted an update. The customer app accepts a tracking link and address correction and needs connectivity. Test both on real devices and weak networks before a Salem pilot. Delivery proof needs a clear retention policy.
 
 The mobile-friendly tracking page remains the primary customer experience. The customer app is an optional way to keep one link on a device; it does not have ordering or account history.

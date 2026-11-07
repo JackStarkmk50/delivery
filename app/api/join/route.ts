@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { database } from '@/lib/database';
-import { createSession, hash, passwordHash, sameOrigin } from '@/lib/session';
+import { hash, passwordHash, sameOrigin } from '@/lib/session';
+import { sendVerification } from '@/lib/verification';
 
 export const runtime = 'nodejs';
 const join = z.object({ token: z.string().regex(/^[a-f0-9]{64}$/), password: z.string().min(12).max(128), name: z.string().trim().min(2).max(80) });
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: 'Invalid invitation or password.' }, { status: 400 });
   const { token, password, name } = parsed.data;
   const client = await database.connect();
+  let joined: { id: string; email: string } | null = null;
   try {
     await client.query('BEGIN');
     const invite = await client.query("SELECT i.email,i.workspace_id,i.role,a.workspace FROM team_invitations i JOIN accounts a ON a.id=i.workspace_id WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at>now() FOR UPDATE OF i", [hash(token)]);
@@ -23,8 +25,9 @@ export async function POST(request: Request) {
     await client.query('INSERT INTO workspace_memberships(account_id,workspace_id,role) VALUES($1,$2,$3)', [id,workspace_id,role]);
     await client.query('UPDATE team_invitations SET accepted_at=now() WHERE token_hash=$1', [hash(token)]);
     await client.query('COMMIT');
-    await createSession(id);
-    return Response.json({ ok: true });
+    joined = { id, email };
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); }
+  if (!joined || !(await sendVerification(joined.id,joined.email))) return Response.json({ error: 'Account created, but email is unavailable. Request a new verification link later.' }, { status: 503 });
+  return Response.json({ needs_verification: true });
 }

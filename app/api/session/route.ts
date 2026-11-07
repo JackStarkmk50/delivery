@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { database } from '@/lib/database';
 import { account, createSession, hash, passwordHash, sameOrigin, verifyPassword } from '@/lib/session';
+import { sendVerification } from '@/lib/verification';
 export const runtime = 'nodejs';
 const credentials = z.object({ email: z.email().max(254).transform(value => value.toLowerCase()), password: z.string().min(12).max(128), workspace: z.string().trim().min(2).max(100).optional(), mode: z.enum(['register','login']) });
 export async function GET() { return Response.json({ account: await account() }, { headers: { 'Cache-Control': 'no-store' } }); }
@@ -27,12 +28,14 @@ export async function POST(request: Request) {
       await client.query('COMMIT');
     } catch (error) { await client.query('ROLLBACK'); throw error; }
     finally { client.release(); }
-    await createSession(id);
+    if (!(await sendVerification(id,email))) return Response.json({ error: 'Account created, but email is unavailable. Request a new verification link later.' }, { status: 503 });
+    return Response.json({ needs_verification: true });
   } else {
-    const result = await database.query('SELECT id,password_hash FROM accounts WHERE email=$1', [email]);
+    const result = await database.query('SELECT id,password_hash,email_verification_required,email_verified_at FROM accounts WHERE email=$1', [email]);
     const found = result.rows[0];
     const valid = await verifyPassword(password, found?.password_hash ?? `${'0'.repeat(32)}:${'0'.repeat(128)}`);
     if (!found || !valid) return Response.json({ error: 'Email or password is incorrect.' }, { status: 401 });
+    if (found.email_verification_required && !found.email_verified_at) return Response.json({ error: 'Verify your email before signing in. Request a new link if needed.' }, { status: 403 });
     await createSession(found.id);
   }
   return Response.json({ account: await account() });

@@ -21,25 +21,41 @@ async function call(path, method = 'GET', body, cookie, bearer) {
   return { status: response.status, data: await response.json(), cookie: response.headers.get('set-cookie')?.split(';')[0] };
 }
 function expect(value, message) { if (!value) throw new Error(message); }
+async function verify(email) {
+  const response = await fetch(`http://127.0.0.1:8025/view/latest.txt?query=${encodeURIComponent(`to:${email}`)}`);
+  const text = await response.text();
+  const token = text.match(/\/verify\/([a-f0-9]{64})/)?.[1];
+  expect(token, `Verification link did not arrive for ${email}.`);
+  const result = await call('/api/verification/confirm', 'POST', { token });
+  expect(result.status === 200 && result.cookie, `Verification failed for ${email}: ${JSON.stringify(result.data)}`);
+  const reused = await call('/api/verification/confirm', 'POST', { token });
+  expect(reused.status === 410, 'Verification link was reusable.');
+  return result;
+}
 
 try {
-  const owner = await call('/api/session', 'POST', { mode: 'register', email: ownerEmail, password, workspace: 'Team test' });
-  expect(owner.status === 200 && owner.cookie, `Owner registration failed: ${JSON.stringify(owner.data)}`);
+  const registeredOwner = await call('/api/session', 'POST', { mode: 'register', email: ownerEmail, password, workspace: 'Team test' });
+  expect(registeredOwner.status === 200 && registeredOwner.data.needs_verification && !registeredOwner.cookie, `Owner registration failed: ${JSON.stringify(registeredOwner.data)}`);
+  const beforeVerify = await call('/api/session', 'POST', { mode: 'login', email: ownerEmail, password });
+  expect(beforeVerify.status === 403, 'Unverified owner signed in.');
+  const owner = await verify(ownerEmail);
   const memberBefore = await call('/api/team');
   expect(memberBefore.status === 403, 'Unauthenticated team access was allowed.');
   const invite = await call('/api/team', 'POST', { email: memberEmail }, owner.cookie);
   expect(invite.status === 201, `Invitation failed: ${JSON.stringify(invite.data)}`);
   const token = invite.data.invite_url.split('/').at(-1);
-  const joined = await call('/api/join', 'POST', { token, password, name: 'Test dispatcher' });
-  expect(joined.status === 200 && joined.cookie, `Join failed: ${JSON.stringify(joined.data)}`);
+  const pendingJoin = await call('/api/join', 'POST', { token, password, name: 'Test dispatcher' });
+  expect(pendingJoin.status === 200 && pendingJoin.data.needs_verification && !pendingJoin.cookie, `Join failed: ${JSON.stringify(pendingJoin.data)}`);
+  const joined = await verify(memberEmail);
   const reused = await call('/api/join', 'POST', { token, password, name: 'Test dispatcher' });
   expect(reused.status === 410, 'Invitation was reusable.');
   const created = await call('/api/deliveries', 'POST', { customer: 'Test customer', phone: '9876543210', address: 'Test street, Salem', landmark: 'North gate', driver: '' }, joined.cookie);
   expect(created.status === 201, `Dispatcher could not create delivery: ${JSON.stringify(created.data)}`);
   const ownerQueue = await call('/api/deliveries', 'GET', undefined, owner.cookie);
   expect(ownerQueue.data.deliveries?.some(item => item.id === created.data.delivery.id), 'Owner did not see dispatcher delivery.');
-  const outsider = await call('/api/session', 'POST', { mode: 'register', email: outsiderEmail, password, workspace: 'Other test' });
-  expect(outsider.status === 200 && outsider.cookie, 'Outsider registration failed.');
+  const outsiderRegistration = await call('/api/session', 'POST', { mode: 'register', email: outsiderEmail, password, workspace: 'Other test' });
+  expect(outsiderRegistration.status === 200 && outsiderRegistration.data.needs_verification, 'Outsider registration failed.');
+  const outsider = await verify(outsiderEmail);
   const outsiderQueue = await call('/api/deliveries', 'GET', undefined, outsider.cookie);
   expect(!outsiderQueue.data.deliveries?.some(item => item.id === created.data.delivery.id), 'Delivery leaked to another workspace.');
   const forbiddenLink = await call(`/api/deliveries/${created.data.delivery.id}/tracking`, 'POST', undefined, outsider.cookie);
@@ -59,8 +75,11 @@ try {
   const driverInvite = await call('/api/team', 'POST', { email: driverEmail, role: 'driver' }, owner.cookie);
   expect(driverInvite.status === 201, 'Driver invitation failed.');
   const driverToken = driverInvite.data.invite_url.split('/').at(-1);
-  const driverJoined = await call('/api/join', 'POST', { token: driverToken, password, name: 'Test driver' });
-  expect(driverJoined.status === 200, 'Driver join failed.');
+  const pendingDriver = await call('/api/join', 'POST', { token: driverToken, password, name: 'Test driver' });
+  expect(pendingDriver.status === 200 && pendingDriver.data.needs_verification, 'Driver join failed.');
+  const driverBeforeVerify = await call('/api/mobile/session', 'POST', { email: driverEmail, password });
+  expect(driverBeforeVerify.status === 403, 'Unverified driver signed in.');
+  const driverJoined = await verify(driverEmail);
   const driverId = (await database.query('SELECT id FROM accounts WHERE email=$1', [driverEmail])).rows[0].id;
   const driverWeb = await call('/api/deliveries', 'GET', undefined, driverJoined.cookie);
   expect(driverWeb.status === 403, 'Driver could read dispatcher queue.');

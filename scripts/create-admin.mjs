@@ -12,6 +12,6 @@ try {
   const salt = randomBytes(16).toString('hex');
   const key = await promisify(scrypt)(password, salt, 64, { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 });
   const digest = `${salt}:${key.toString('hex')}`;
-  await client.query('INSERT INTO accounts(id,email,password_hash,workspace,is_platform_admin) VALUES($1,$2,$3,$4,true) ON CONFLICT(email) DO UPDATE SET is_platform_admin=true', [randomUUID(), email, digest, 'MileDesk operations']);
+  await client.query('INSERT INTO accounts(id,email,password_hash,workspace,is_platform_admin,email_verification_required) VALUES($1,$2,$3,$4,true,false) ON CONFLICT(email) DO UPDATE SET is_platform_admin=true', [randomUUID(), email, digest, 'MileDesk operations']);
   console.log('Platform admin ready.');
 } finally { await client.end(); }

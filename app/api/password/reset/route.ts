@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const found = await client.query('SELECT account_id FROM password_reset_tokens WHERE token_hash=$1 AND expires_at>now() FOR UPDATE', [hash(parsed.data.token)]);
     if (!found.rowCount) { await client.query('ROLLBACK'); return Response.json({ error: 'Reset link expired or already used.' }, { status: 410 }); }
     const id = found.rows[0].account_id;
-    await client.query('UPDATE accounts SET password_hash=$2 WHERE id=$1', [id,await passwordHash(parsed.data.password)]);
+    await client.query('UPDATE accounts SET password_hash=$2,email_verified_at=now() WHERE id=$1', [id,await passwordHash(parsed.data.password)]);
     await client.query('DELETE FROM sessions WHERE account_id=$1', [id]);
     await client.query('DELETE FROM mobile_sessions WHERE account_id=$1', [id]);
     await client.query('DELETE FROM password_reset_tokens WHERE account_id=$1', [id]);

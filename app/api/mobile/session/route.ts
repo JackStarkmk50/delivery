@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       { status: 429 },
     );
   const found = await database.query(
-    "SELECT a.id,a.password_hash FROM accounts a JOIN workspace_memberships m ON m.account_id=a.id AND m.role='driver' WHERE a.email=$1",
+    "SELECT a.id,a.password_hash,a.email_verification_required,a.email_verified_at FROM accounts a JOIN workspace_memberships m ON m.account_id=a.id AND m.role='driver' WHERE a.email=$1",
     [email],
   );
   const valid = await verifyPassword(
@@ -50,6 +50,8 @@ export async function POST(request: Request) {
       { error: "Email or password is incorrect." },
       { status: 401 },
     );
+  if (found.rows[0].email_verification_required && !found.rows[0].email_verified_at)
+    return Response.json({ error: "Verify your email before signing in." }, { status: 403 });
   const token = await createMobileSession(found.rows[0].id);
   return Response.json({ token }, { headers: { "Cache-Control": "no-store" } });
 }
