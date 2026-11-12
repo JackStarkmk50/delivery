@@ -74,7 +74,7 @@ export async function PATCH(
       );
     }
     const result = await client.query(
-      "UPDATE deliveries SET status=$4,failure_reason=$5,version=version+1 WHERE id=$1 AND account_id=$2 AND driver_account_id=$3 RETURNING id,customer,phone,address,landmark,status,version,created_at,failure_reason",
+      "UPDATE deliveries SET status=$4,failure_reason=$5,version=version+1 WHERE id=$1 AND account_id=$2 AND driver_account_id=$3 RETURNING id,customer,phone,address,landmark,status,version,created_at,failure_reason,location_latitude,location_longitude,location_accuracy_m",
       [
         id,
         user.workspace_id,

@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const user = await account();
   if (!user?.workspace_id || !['owner','dispatcher'].includes(user.role ?? '')) return Response.json({ error: 'Dispatcher access required.' }, { status: 403 });
   const { id } = await params;
-  const result = await database.query('SELECT d.*,coalesce(json_agg(json_build_object(\'message\',e.message,\'at\',e.created_at) ORDER BY e.id) FILTER (WHERE e.id IS NOT NULL),\'[]\'::json) AS history FROM deliveries d LEFT JOIN delivery_events e ON e.delivery_id=d.id WHERE d.id=$1 AND d.account_id=$2 GROUP BY d.id', [id,user.workspace_id]);
+  const result = await database.query('SELECT d.*,EXISTS(SELECT 1 FROM delivery_proofs p WHERE p.delivery_id=d.id AND p.uploaded_at>now()-interval \'30 days\') AS has_proof,coalesce(json_agg(json_build_object(\'message\',e.message,\'at\',e.created_at) ORDER BY e.id) FILTER (WHERE e.id IS NOT NULL),\'[]\'::json) AS history FROM deliveries d LEFT JOIN delivery_events e ON e.delivery_id=d.id WHERE d.id=$1 AND d.account_id=$2 GROUP BY d.id', [id,user.workspace_id]);
   return result.rowCount ? Response.json({ delivery: result.rows[0] }) : Response.json({ error: 'Delivery not found.' }, { status: 404 });
 }
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -34,7 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (parsed.data.driver_account_id === null && next.status === 'Assigned') next.status = 'Ready to assign';
     if (next.status === 'Address check' && next.landmark) next.status = next.driver ? 'Assigned' : 'Ready to assign';
     if (['Assigned','Picked up','On the way','Delivered'].includes(next.status) && (!next.landmark || !next.driver)) { await client.query('ROLLBACK'); return Response.json({ error: 'Confirm the landmark and assign a driver before dispatch.' }, { status: 400 }); }
-    const result = await client.query('UPDATE deliveries SET customer=$3,phone=$4,address=$5,landmark=$6,driver=$7,status=$8,driver_account_id=$9,version=version+1 WHERE id=$1 AND account_id=$2 RETURNING *', [id,user.workspace_id,next.customer,next.phone,next.address,next.landmark,next.driver,next.status,next.driver_account_id]);
+    const result = await client.query('UPDATE deliveries SET customer=$3,phone=$4,address=$5,landmark=$6,driver=$7,status=$8,driver_account_id=$9,location_latitude=CASE WHEN address<>$5 THEN NULL ELSE location_latitude END,location_longitude=CASE WHEN address<>$5 THEN NULL ELSE location_longitude END,location_accuracy_m=CASE WHEN address<>$5 THEN NULL ELSE location_accuracy_m END,location_shared_at=CASE WHEN address<>$5 THEN NULL ELSE location_shared_at END,version=version+1 WHERE id=$1 AND account_id=$2 RETURNING *', [id,user.workspace_id,next.customer,next.phone,next.address,next.landmark,next.driver,next.status,next.driver_account_id]);
     const message = next.status !== previous.status ? `Status changed to ${next.status}` : 'Delivery details updated';
     await client.query('INSERT INTO delivery_events(delivery_id,message) VALUES($1,$2)', [id,message]);
     await client.query('COMMIT');

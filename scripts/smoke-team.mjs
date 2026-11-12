@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import nextEnv from '@next/env';
 import pg from 'pg';
 
@@ -56,6 +57,17 @@ try {
   const outsiderRegistration = await call('/api/session', 'POST', { mode: 'register', email: outsiderEmail, password, workspace: 'Other test' });
   expect(outsiderRegistration.status === 200 && outsiderRegistration.data.needs_verification, 'Outsider registration failed.');
   const outsider = await verify(outsiderEmail);
+  const ownerId = (await database.query('SELECT id FROM accounts WHERE email=$1', [ownerEmail])).rows[0].id;
+  const outsiderId = (await database.query('SELECT id FROM accounts WHERE email=$1', [outsiderEmail])).rows[0].id;
+  await database.query('UPDATE accounts SET is_platform_admin=true WHERE id=$1', [ownerId]);
+  const billing = { service_status: 'trial', payment_status: 'paid_externally', plan_name: 'Pilot', renewal_date: null, payment_reference: 'TEST-RECEIPT', notes: 'Local test' };
+  const savedBilling = await call(`/api/admin/clients/${outsiderId}`, 'PATCH', billing, owner.cookie);
+  expect(savedBilling.status === 200, 'Operator could not record external payment.');
+  const billingEvents = await call(`/api/admin/clients/${outsiderId}/events`, 'GET', undefined, owner.cookie);
+  expect(billingEvents.data.events?.[0]?.current?.payment_status === 'paid_externally', 'Subscription change was not recorded.');
+  await database.query('UPDATE accounts SET is_platform_admin=false WHERE id=$1', [ownerId]);
+  const privateBilling = await call(`/api/admin/clients/${outsiderId}/events`, 'GET', undefined, owner.cookie);
+  expect(privateBilling.status === 403, 'Subscription history was visible to a client.');
   const outsiderQueue = await call('/api/deliveries', 'GET', undefined, outsider.cookie);
   expect(!outsiderQueue.data.deliveries?.some(item => item.id === created.data.delivery.id), 'Delivery leaked to another workspace.');
   const forbiddenLink = await call(`/api/deliveries/${created.data.delivery.id}/tracking`, 'POST', undefined, outsider.cookie);
@@ -66,12 +78,22 @@ try {
   const customerView = await call(`/api/track/${trackingToken}`);
   expect(customerView.status === 200 && customerView.data.delivery.address === 'Test street, Salem', 'Customer could not view delivery.');
   expect(!('phone' in customerView.data.delivery), 'Customer tracking exposed the phone number.');
-  const correction = await call(`/api/track/${trackingToken}`, 'PATCH', { version: customerView.data.delivery.version, address: 'Corrected street, Salem', landmark: 'East gate' });
-  expect(correction.status === 200 && correction.data.delivery.status === 'Address check', 'Customer address correction failed.');
+  const partialPin = await call(`/api/track/${trackingToken}`, 'PATCH', { version: customerView.data.delivery.version, address: 'Corrected street, Salem', landmark: 'East gate', latitude: 11.65 });
+  expect(partialPin.status === 400, 'Partial location pin was accepted.');
+  const correction = await call(`/api/track/${trackingToken}`, 'PATCH', { version: customerView.data.delivery.version, address: 'Corrected street, Salem', landmark: 'East gate', latitude: 11.65, longitude: 78.15, accuracy_m: 18 });
+  expect(correction.status === 200 && correction.data.delivery.status === 'Address check' && correction.data.delivery.location_latitude === 11.65, 'Customer address and location correction failed.');
+  const pinned = await call(`/api/deliveries/${created.data.delivery.id}`, 'GET', undefined, owner.cookie);
+  expect(pinned.data.delivery.location_longitude === 78.15, 'Dispatcher did not see customer pin.');
   const rotated = await call(`/api/deliveries/${created.data.delivery.id}/tracking`, 'POST', undefined, owner.cookie);
   expect(rotated.status === 200, 'Tracking link rotation failed.');
   const oldLink = await call(`/api/track/${trackingToken}`);
   expect(oldLink.status === 404, 'Old tracking link remained active after rotation.');
+  const noConsent = await call(`/api/deliveries/${created.data.delivery.id}/tracking`, 'POST', { email: `recipient-${suffix}@example.test`, consent: false }, owner.cookie);
+  expect(noConsent.status === 400, 'Tracking email was allowed without consent.');
+  const emailed = await call(`/api/deliveries/${created.data.delivery.id}/tracking`, 'POST', { email: `recipient-${suffix}@example.test`, consent: true }, owner.cookie);
+  expect(emailed.status === 200 && emailed.data.email_sent, 'Customer tracking email was not sent.');
+  const mailedText = await (await fetch(`http://127.0.0.1:8025/view/latest.txt?query=${encodeURIComponent(`to:recipient-${suffix}@example.test`)}`)).text();
+  expect(mailedText.includes(emailed.data.url), 'Tracking link did not arrive in Mailpit.');
   const driverInvite = await call('/api/team', 'POST', { email: driverEmail, role: 'driver' }, owner.cookie);
   expect(driverInvite.status === 201, 'Driver invitation failed.');
   const driverToken = driverInvite.data.invite_url.split('/').at(-1);
@@ -90,6 +112,27 @@ try {
   const driverQueue = await call('/api/mobile/deliveries', 'GET', undefined, undefined, driverLogin.data.token);
   expect(driverQueue.data.deliveries?.some(item => item.id === assigned.data.delivery.id), 'Assigned stop missing on driver API.');
   expect(!driverQueue.data.deliveries?.some(item => item.id === created.data.delivery.id), 'Unassigned stop leaked to driver.');
+  const completed = await call('/api/deliveries', 'POST', { customer: 'Completed test', phone: '9876543210', address: 'Delivery road, Salem', landmark: 'Front desk', driver_account_id: driverId }, joined.cookie);
+  let progress = completed.data.delivery;
+  for (const status of ['Picked up','On the way','Delivered']) {
+    const step = await call(`/api/mobile/deliveries/${progress.id}`, 'PATCH', { version: progress.version, status }, undefined, driverLogin.data.token);
+    expect(step.status === 200, `${status} update failed: ${JSON.stringify(step.data)}`);
+    progress = step.data.delivery;
+  }
+  const photo = await readFile(new URL('../mobile/assets/miledesk-mark.png', import.meta.url));
+  const form = new FormData();
+  form.append('photo', new Blob([photo], { type: 'image/png' }), 'delivery.png');
+  const proofUpload = await fetch(`${origin}/api/mobile/deliveries/${progress.id}/proof`, { method: 'POST', headers: { authorization: `Bearer ${driverLogin.data.token}` }, body: form });
+  expect(proofUpload.status === 201, `Driver proof upload failed: ${await proofUpload.text()}`);
+  const proofRepeat = await fetch(`${origin}/api/mobile/deliveries/${progress.id}/proof`, { method: 'POST', headers: { authorization: `Bearer ${driverLogin.data.token}` }, body: form });
+  expect(proofRepeat.status === 409, 'Driver replaced an existing proof photo.');
+  const proofView = await fetch(`${origin}/api/deliveries/${progress.id}/proof`, { headers: { cookie: owner.cookie } });
+  expect(proofView.status === 200 && proofView.headers.get('content-type') === 'image/png', 'Dispatcher could not view proof photo.');
+  const proofOutsider = await fetch(`${origin}/api/deliveries/${progress.id}/proof`, { headers: { cookie: outsider.cookie } });
+  expect(proofOutsider.status === 404, 'Proof photo leaked to another workspace.');
+  await database.query("UPDATE delivery_proofs SET uploaded_at=now()-interval '31 days' WHERE delivery_id=$1", [progress.id]);
+  const expiredProof = await fetch(`${origin}/api/deliveries/${progress.id}/proof`, { headers: { cookie: owner.cookie } });
+  expect(expiredProof.status === 404, 'Expired proof photo remained visible.');
   const pickup = await call(`/api/mobile/deliveries/${assigned.data.delivery.id}`, 'PATCH', { version: assigned.data.delivery.version, status: 'Picked up' }, undefined, driverLogin.data.token);
   expect(pickup.status === 200, `Pickup update failed: ${JSON.stringify(pickup.data)}`);
   const activeRemoval = await call(`/api/team/${driverId}`, 'DELETE', undefined, owner.cookie);
@@ -127,7 +170,7 @@ try {
   expect(previousSession.status === 403, 'Old session stayed active after password reset.');
   const newLogin = await call('/api/session', 'POST', { mode: 'login', email: ownerEmail, password: newPassword });
   expect(newLogin.status === 200, 'New password did not sign in.');
-  console.log('Team, recovery, driver, and customer flows passed: assignment, isolation, transitions, address correction, link rotation, revocation, reset.');
+  console.log('Team, recovery, driver, customer, and operator flows passed: assignment, location pin, private proof, tracking email, billing history, isolation, transitions, revocation, reset.');
 } finally {
   await database.query('DELETE FROM accounts WHERE email = ANY($1)', [[ownerEmail, memberEmail, driverEmail, outsiderEmail]]);
   await database.end();

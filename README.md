@@ -17,7 +17,7 @@ npm run dev
 
 Open http://localhost:3000.
 
-The workspace at `/` is a browser demo with fictional Chennai records. Changes stay in browser storage. The separate `/live` workspace uses PostgreSQL for account sign-in, isolated delivery queues, and delivery history. New accounts verify their email before signing in. Owners can invite dispatchers and drivers from `/team`. Dispatchers assign deliveries to driver accounts. The partner mobile app reads those assignments and sends status updates. A private customer link shows status and accepts address corrections. The restricted `/admin` view lists client businesses and their manually recorded service and payment status. The first pilot is planned for Salem. Live location, ETA, delivery notifications, proof uploads, and automated billing are not implemented.
+The workspace at `/` is a browser demo with fictional Chennai records. Changes stay in browser storage. The separate `/live` workspace uses PostgreSQL for account sign-in, isolated delivery queues, and delivery history. New accounts verify their email before signing in. Owners can invite dispatchers and drivers from `/team`. Dispatchers assign deliveries to driver accounts. The partner mobile app reads those assignments and sends status updates. A private customer link shows status and accepts address corrections or an optional entrance location pin. Dispatchers can email that link with customer consent. Drivers can add a private delivery photo after completion. The restricted `/admin` view lists client businesses, manually recorded service and payment status, and an audit of changes. The first pilot is planned for Salem. Live driver tracking, ETA, automated status alerts, and automatic billing are not implemented.
 
 For local data, start Docker Desktop, set a private `POSTGRES_PASSWORD` and matching `DATABASE_URL` in `.env.local`, then run `docker compose up -d database mailpit` and `npm run db:setup`. Set `APP_ORIGIN=http://localhost:3000`, `ALLOW_REGISTRATION=true`, `SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`, and `MAIL_FROM=MileDesk <accounts@miledesk.local>` for local account creation and password recovery. Mailpit shows captured emails at http://localhost:8025. Disable registration after creating pilot accounts. See `docs/local-pilot.md` for setup and remaining pilot work.
 
@@ -31,3 +31,5 @@ To create the platform operator, set `PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_
 - `docs/saas-starter-evaluation.md` — Open SaaS / Wasp fit review
 - `docs/local-pilot.md` — local database setup and remaining pilot work
 - `docs/gap-audit.md` — implemented flows, remaining gaps, and pilot checks
+- `docs/hosting.md` — production container setup and backup requirements
+- `docs/provider-setup.md` — account setup sequence for the Salem pilot

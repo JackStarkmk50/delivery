@@ -10,6 +10,9 @@ type Delivery = {
   status: string;
   version: number;
   workspace: string;
+  location_latitude: number | null;
+  location_longitude: number | null;
+  location_accuracy_m: number | null;
 };
 const stages = ["Assigned", "Picked up", "On the way", "Delivered"];
 function heading(status: string) {
@@ -26,6 +29,18 @@ export default function Tracking({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [pin, setPin] = useState<{ latitude: number; longitude: number; accuracy_m: number } | null>(null);
+  function locate() {
+    if (!navigator.geolocation) { setMessage('Location is unavailable in this browser.'); return; }
+    setSaving(true);
+    navigator.geolocation.getCurrentPosition(position => {
+      const accuracy_m = position.coords.accuracy;
+      setSaving(false);
+      if (accuracy_m > 1000) { setMessage('Location is too imprecise. Try again near the entrance.'); return; }
+      setPin({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy_m });
+      setMessage(`Location ready (about ${Math.round(accuracy_m)} m accuracy). Send it with the address below.`);
+    }, () => { setSaving(false); setMessage('Location permission was denied or unavailable.'); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  }
   useEffect(() => {
     let active = true;
     fetch(`/api/track/${token}`, { cache: "no-store" })
@@ -58,11 +73,13 @@ export default function Tracking({ token }: { token: string }) {
           version: delivery.version,
           address: data.get("address"),
           landmark: data.get("landmark"),
+          ...(pin ?? {}),
         }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
       setDelivery(result.delivery);
+      setPin(null);
       setMessage("Address sent to the dispatcher for review.");
     } catch (error) {
       setMessage((error as Error).message);
@@ -144,6 +161,8 @@ export default function Tracking({ token }: { token: string }) {
                     maxLength={300}
                   />
                 </label>
+                <button type="button" className="secondary-button" disabled={saving} onClick={locate}>{pin ? 'Update location pin' : 'Use my current location'}</button>
+                <p>Optional. Share your location while you are at the entrance. The dispatcher will review it.</p>
                 <button className="primary-button" disabled={saving}>
                   {saving ? "Sending…" : "Send address correction"}
                 </button>
@@ -157,6 +176,7 @@ export default function Tracking({ token }: { token: string }) {
                 </p>
               </>
             )}
+            {delivery.location_latitude !== null && <p>Location pin shared · accuracy about {Math.round(delivery.location_accuracy_m ?? 0)} m. The entrance note is still important.</p>}
           </section>
           {message && (
             <p className="tracking-notice" role="status">

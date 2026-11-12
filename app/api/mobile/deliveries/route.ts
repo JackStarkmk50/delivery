@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       { status: 401 },
     );
   const result = await database.query(
-    "SELECT id,customer,phone,address,landmark,status,version,created_at,failure_reason FROM deliveries WHERE account_id=$1 AND driver_account_id=$2 ORDER BY CASE WHEN status IN ('Delivered','Failed') THEN 1 ELSE 0 END,created_at DESC LIMIT 100",
+    "SELECT d.id,d.customer,d.phone,d.address,d.landmark,d.status,d.version,d.created_at,d.failure_reason,d.location_latitude,d.location_longitude,d.location_accuracy_m,EXISTS(SELECT 1 FROM delivery_proofs p WHERE p.delivery_id=d.id AND p.uploaded_at>now()-interval '30 days') AS has_proof FROM deliveries d WHERE d.account_id=$1 AND d.driver_account_id=$2 ORDER BY CASE WHEN d.status IN ('Delivered','Failed') THEN 1 ELSE 0 END,d.created_at DESC LIMIT 100",
     [user.workspace_id, user.id],
   );
   return Response.json(

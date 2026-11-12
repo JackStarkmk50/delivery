@@ -7,7 +7,7 @@ const delivery = z.object({ customer: z.string().trim().min(2).max(120), phone: 
 export async function GET() {
   const user = await account();
   if (!user?.workspace_id || !['owner','dispatcher'].includes(user.role ?? '')) return Response.json({ error: 'Dispatcher access required.' }, { status: 403 });
-  const result = await database.query('SELECT id,customer,phone,address,landmark,status,driver,driver_account_id,failure_reason,version,created_at FROM deliveries WHERE account_id=$1 ORDER BY created_at DESC LIMIT 200', [user.workspace_id]);
+  const result = await database.query('SELECT id,customer,phone,address,landmark,status,driver,driver_account_id,failure_reason,version,created_at,location_latitude,location_longitude,location_accuracy_m FROM deliveries WHERE account_id=$1 ORDER BY created_at DESC LIMIT 200', [user.workspace_id]);
   return Response.json({ deliveries: result.rows }, { headers: { 'Cache-Control': 'no-store' } });
 }
 export async function POST(request: Request) {

@@ -6,6 +6,7 @@ export async function sendMail(to: string, subject: string, text: string) {
   const port = Number(process.env.SMTP_PORT ?? 1025);
   const transport = nodemailer.createTransport({
     host, port, secure: port === 465,
+    requireTLS: process.env.NODE_ENV === 'production' && port !== 465,
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD ?? '' } : undefined,
     connectionTimeout: 5000,
   });

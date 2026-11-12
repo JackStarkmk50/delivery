@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:setup": "node scripts/database.mjs",
-    "admin:setup": "node scripts/create-admin.mjs"
+    "admin:setup": "node scripts/create-admin.mjs",
+    "proofs:prune": "node scripts/prune-proofs.mjs"
   },
   "dependencies": {
     "next": "16.4.5",

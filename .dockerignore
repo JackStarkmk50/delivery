@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.env*
+mobile
+prototype
+skills-lock.json
+docs
+.agents
+.hallmark
+*.log

@@ -7,11 +7,14 @@ const correction = z.object({
   version: z.number().int().positive(),
   address: z.string().trim().min(5).max(300),
   landmark: z.string().trim().max(300),
-});
+  latitude: z.number().finite().min(-90).max(90).optional(),
+  longitude: z.number().finite().min(-180).max(180).optional(),
+  accuracy_m: z.number().finite().positive().max(10000).optional(),
+}).refine(value => [value.latitude,value.longitude,value.accuracy_m].filter(item => item !== undefined).length % 3 === 0);
 async function find(token: string) {
   if (!/^[a-f0-9]{64}$/.test(token)) return null;
   const result = await database.query(
-    "SELECT d.id,d.customer,d.address,d.landmark,d.status,d.version,a.workspace FROM deliveries d JOIN accounts a ON a.id=d.account_id WHERE d.tracking_token_hash=$1 AND d.tracking_expires_at>now()",
+    "SELECT d.id,d.customer,d.address,d.landmark,d.status,d.version,d.location_latitude,d.location_longitude,d.location_accuracy_m,a.workspace FROM deliveries d JOIN accounts a ON a.id=d.account_id WHERE d.tracking_token_hash=$1 AND d.tracking_expires_at>now()",
     [hash(token)],
   );
   return result.rows[0] as
@@ -22,6 +25,9 @@ async function find(token: string) {
         landmark: string;
         status: string;
         version: number;
+        location_latitude: number | null;
+        location_longitude: number | null;
+        location_accuracy_m: number | null;
         workspace: string;
       }
     | undefined;
@@ -57,7 +63,7 @@ export async function PATCH(
       { error: "Tracking link expired or unavailable." },
       { status: 404 },
     );
-  const parsed = correction.safeParse(await request.json().catch(() => null));
+    const parsed = correction.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return Response.json(
       { error: "Check the address and entrance details." },
@@ -97,12 +103,12 @@ export async function PATCH(
       );
     }
     await client.query(
-      "UPDATE deliveries SET address=$2,landmark=$3,status='Address check',version=version+1 WHERE id=$1",
-      [previous.id, parsed.data.address, parsed.data.landmark],
+      "UPDATE deliveries SET address=$2,landmark=$3,status='Address check',version=version+1,location_latitude=$4,location_longitude=$5,location_accuracy_m=$6,location_shared_at=CASE WHEN $4::double precision IS NULL THEN NULL ELSE now() END WHERE id=$1",
+      [previous.id, parsed.data.address, parsed.data.landmark,parsed.data.latitude ?? null,parsed.data.longitude ?? null,parsed.data.accuracy_m ?? null],
     );
     await client.query(
       "INSERT INTO delivery_events(delivery_id,message) VALUES($1,$2)",
-      [previous.id, "Customer submitted an address correction"],
+      [previous.id, parsed.data.latitude === undefined ? "Customer submitted an address correction" : "Customer submitted an address and location pin"],
     );
     await client.query("COMMIT");
     const delivery = await find(token);
